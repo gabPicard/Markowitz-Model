@@ -13,6 +13,8 @@ Functions:
     Calculates the sharpe ratio of a portfolio.
 - max_sharpe_ratio
     Finds the maximum sharpe ratio possible for a set of asset.
+- compute_return
+    Computes the return of a portfolio given its weights and the expected returns of the assets.
 - validate_input
     Runs some verifications on a input to avoid repetitions.
 """
@@ -209,6 +211,22 @@ def max_sharpe_ratio(cov_matrix, expected_returns, risk_free_rate, num_points=50
             print(f"Error in `optimize_portfolio`: {str(e)}")
 
         return {"max_sharpe": max_sharpe_ratio, "opt_return": optimized_return, "opt_weights": optimized_weights, "opt_std": optimized_std}
+
+def compute_return(weights, expected_returns):
+    """
+    Computes the return of a portfolio given its weights and the expected returns of the assets.
+
+    Parameters:
+    - weights: np.array
+        The weights of the assets in the portfolio.
+    - expected_returns: np.array
+        The expected returns of the assets in the portfolio.
+
+    Returns:
+    - return: float
+        The return of the portfolio.
+    """
+    return np.dot(weights, expected_returns)
 
 def validate_input(input, type):
     """

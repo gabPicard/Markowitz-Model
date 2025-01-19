@@ -1,6 +1,7 @@
-from optimization import calculate_efficient_frontier, max_sharpe_ratio, optimize_portfolio
+from optimization import calculate_efficient_frontier, max_sharpe_ratio, optimize_portfolio, compute_return
 from data import load_data_from_file, fetch_data_from_api, fetch_risk_free_rate, calculate_returns, calculate_covariance_matrix, validate_data, get_tickers_list, handle_missing_data
 from visualization import plot_efficient_frontier
+from blacklitterman import black_litterman
 """
 The main file of this package. It uses various functions accross all the files to accomplish different tasks easily.
 
@@ -10,7 +11,11 @@ Functions:
 - load_data:
     Loads the data from the internet, checks it replaces any missing information.
 - get_risk_free_rate:
-    Fetch the risk-free rate from the internet
+    Fetch the risk-free rate from the internet.
+- min_variance_portfolio:
+    Computes the minimum variance portfolio for a given set of data.
+- max_sharpe_portfolio:
+    Computes the maximum sharpe ratio portfolio for a given set of data.
 """
 
 def efficient_frontier(data, precision=50, show_graph=True, short_selling_allowed=False, risk_free_rate=None, calculate_max_sharpe_ratio=True):
@@ -45,7 +50,7 @@ def efficient_frontier(data, precision=50, show_graph=True, short_selling_allowe
     - maximum sharpe ratio: float
         The maximum sharpe ratio of the efficient frontier.
     """
-    if max_sharpe_ratio and risk_free_rate is None:
+    if calculate_max_sharpe_ratio and risk_free_rate is None:
         raise ValueError("If you want to compute the maximum Sharpe ratio, provide the risk free rate")
     if not validate_data(data):
         raise ValueError("The data is invalid")
@@ -105,4 +110,98 @@ def get_risk_free_rate(rff="USA", interval="1d"):
     risk_free_rate = fetch_risk_free_rate(bond, interval)
     return risk_free_rate
 
-print(f"Weights: \n{efficient_frontier(load_data("South Korea", "2011-01-01", "2020-12-01", "1mo"), show_graph=False, short_selling_allowed=False, risk_free_rate=get_risk_free_rate("South Korea", "1mo"), calculate_max_sharpe_ratio=False)['optimized weights']}")
+def min_variance_portfolio(data, short_selling_allowed=False, blacklitterman=False, tickers=None, market_ticker=None, p=None, q=None, omega=None, start_date="2022-01-01", end_date="2023-12-01", period="1d", risk_free_rate="^IRX"):
+    """
+    Calculate the minimum variance portfolio using a given DataFrame.
+
+    Paramaters:
+    - data: pd.DataFrame
+        The data containing all the periodic prices of the assets we want to invest in.
+    - short_selling_allowed: bool, optional, default=False
+        Indicates if the user wants to enable short selling (allowing the weights to be negative).
+    - blacklitterman: bool, optional, default=False
+        Indicates if the user wants to use the Black-Litterman model to calculate the minimum variance portfolio.
+    - market_ticker: str, optional
+        The ticker code of the market.
+    - p: np.array, optional
+        The views matrix.
+    - q: np.array, optional
+        The views vector.
+    - omega: np.array, optional
+        The uncertainty matrix.
+    - start_date: str, optional, default="2022-01-01"
+        The date at wich we start fetching the data.
+    - end_date: str, optional, default="2023-12-01"
+        The date at wich we stop fetching the data.
+    - period: str, optional, default="1d"
+        The interval at wich we fetch the data.
+    - risk_free_rate: str, optional, default="^IRX"
+        The ticker code of the risk-free bond.
+    
+    Returns:
+    - weights: list
+        The optimized weights of the minimum variance portfolio.
+    - standard deviation: float
+        The standard deviation of the minimum variance portfolio.
+    """
+    returns = calculate_returns(data)
+    cov_matrix = calculate_covariance_matrix(returns)
+    if blacklitterman:
+        if tickers is None or market_ticker is None or p is None or q is None or omega is None:
+            raise ValueError("If you want to use the Black-Litterman model, provide the market_ticker, p, q and omega")
+        risk_free_rate = get_risk_free_rate(risk_free_rate)
+        returns = black_litterman(tickers, risk_free_rate, cov_matrix, market_ticker, p, q, omega, start_date=start_date, end_date=end_date, period=period)
+        cov_matrix = calculate_covariance_matrix(returns)
+    if not validate_data(data):
+        raise ValueError("The data is invalid")
+    weights, std = optimize_portfolio(cov_matrix, short_selling=short_selling_allowed)
+    portfolio_return = compute_return(weights, returns)
+    return { "Weights": weights, "StD": std, "Return": portfolio_return }
+
+def max_sharpe_portfolio(data, risk_free_rate, short_selling_allowed=False, blacklitterman=False, tickers=None, market_ticker=None, p=None, q=None, omega=None, start_date="2022-01-01", end_date="2023-12-01", period="1d"):
+    """
+    Calculate the maximum sharpe ratio portfolio using a given DataFrame.
+
+    Paramaters:
+    - data: pd.DataFrame
+        The data containing all the periodic prices of the assets we want to invest in.
+    - risk_free_rate: float
+        The average of the risk-free bond returns.
+    - short_selling_allowed: bool, optional, default=False
+        Indicates if the user wants to enable short selling (allowing the weights to be negative).
+    - blacklitterman: bool, optional, default=False
+        Indicates if the user wants to use the Black-Litterman model to calculate the maximum sharpe ratio portfolio.
+    - market_ticker: str, optional
+        The ticker code of the market.
+    - p: np.array, optional
+        The views matrix.
+    - q: np.array, optional
+        The views vector.
+    - omega: np.array, optional
+        The uncertainty matrix.
+    - start_date: str, optional, default="2022-01-01"
+        The date at wich we start fetching the data.
+    - end_date: str, optional, default="2023-12-01"
+        The date at wich we stop fetching the data.
+    - period: str, optional, default="1d"
+        The interval at wich we fetch the data.
+    
+    Returns:
+    - weights: list
+        The optimized weights of the maximum sharpe ratio portfolio.
+    - standard deviation: float
+        The standard deviation of the maximum sharpe ratio portfolio.
+    - sharpe ratio: float
+        The sharpe ratio of the maximum sharpe ratio portfolio.
+    """
+    if not validate_data(data):
+        raise ValueError("The data is invalid")
+    returns = calculate_returns(data)
+    cov_matrix = calculate_covariance_matrix(returns)
+    if blacklitterman:
+        if tickers is None or market_ticker is None or p is None or q is None or omega is None:
+            raise ValueError("If you want to use the Black-Litterman model, provide the market_ticker, p, q and omega")
+        returns = black_litterman(tickers, risk_free_rate, cov_matrix, market_ticker, p, q, omega, start_date=start_date, end_date=end_date, period=period)
+        cov_matrix = calculate_covariance_matrix(returns)
+    sharpe_ratio, opt_return, weights, std = max_sharpe_ratio(cov_matrix, returns, risk_free_rate=risk_free_rate, short_selling=short_selling_allowed)
+    return { "Weights": weights, "StD": std, "Return": opt_return, "Sharpe Ratio": sharpe_ratio }
