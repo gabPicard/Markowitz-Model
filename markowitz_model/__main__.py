@@ -205,3 +205,4 @@ def max_sharpe_portfolio(data, risk_free_rate, short_selling_allowed=False, blac
         cov_matrix = calculate_covariance_matrix(returns)
     sharpe_ratio, opt_return, weights, std = max_sharpe_ratio(cov_matrix, returns, risk_free_rate=risk_free_rate, short_selling=short_selling_allowed)
     return { "Weights": weights, "StD": std, "Return": opt_return, "Sharpe Ratio": sharpe_ratio }
+

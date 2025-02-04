@@ -66,7 +66,8 @@ def optimize_portfolio(cov_matrix, expected_returns=None, target_return=None, sh
         A = matrix(np.vstack(A_list))
         b = matrix(b_list)
 
-        G, h = None, None
+        G = matrix(np.zeros((0, num_assets)))
+        h = matrix(np.zeros(0))
         if not short_selling:
             G = matrix(-np.identity(num_assets))
             h = matrix(np.zeros(num_assets))
@@ -122,7 +123,7 @@ def calculate_efficient_frontier (cov_matrix, expected_returns, num_points = 50,
         for target_return in target_returns:
             try:
                 results = optimize_portfolio(cov_matrix, expected_returns, target_return, short_selling)
-                frontier.append((results['std'], target_return))
+                frontier.append((float(results['std']), float(target_return)))
                 weights_list.append(results['weights'])
             except ValueError as e:
                 print(f"Skipping target return {target_return}: {e}")
@@ -260,4 +261,3 @@ def validate_input(input, type):
         else:
             raise ValueError("Invalid number")
     return validation
-

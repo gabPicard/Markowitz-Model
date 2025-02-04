@@ -24,8 +24,6 @@ Functions:
     Replace the missing data using various methods.
 - save_data
     Saves the given data in a .csv file.
-- get_tickers_list
-    Returns a list of tickers to fetch data from the api.
 """
 
 def load_data_from_file(file_path, index_col=0, parse_dates=True):
@@ -85,7 +83,7 @@ def fetch_data_from_api(tickers, start_date, end_date, interval="1d"):
     except Exception as e:
         raise ValueError(f"Error fetching data from Yahoo Finance: {e}")
 
-def fetch_risk_free_rate(bond="^IRX", period="1d"):
+def fetch_risk_free_rate(bond="^IRX", period="5y"):
     """
     Fetch the risk-free price and calculates its rate using the calculate_return_column function
 
@@ -101,7 +99,7 @@ def fetch_risk_free_rate(bond="^IRX", period="1d"):
     """
     treasury_data = yf.Ticker(bond)
     historical_data = treasury_data.history(period=period)
-    risk_free_rate = calculate_return_column(historical_data["Close"]).mean()
+    risk_free_rate = historical_data["Close"].pct_change().mean()
     return risk_free_rate
 
 def validate_data(data, required_columns=None):
@@ -185,7 +183,7 @@ def calculate_covariance_matrix(returns):
         A DataFrame containing the periodic returns of every asset.
     
     Returns:
-    - a pd.DataFrame containing all variances and covariances.
+    - a np.ndarray containing all variances and covariances.
     """
     try:
         return returns.cov().values
@@ -226,34 +224,3 @@ def save_data(data, file_path="data.csv"):
         data.to_csv(file_path)
     except Exception as e:
         raise ValueError("Failed to save the data: {e}")
-
-def get_tickers_list(domain="USA"):
-    """
-    Gets a list of tickers code for top firms in countries we want to invest in, and the corresponding risk-free rate bond's ticker code.
-
-    Parameters:
-    - domain: str, optional, default="USA"
-        The name of the country we want to invest in. 
-    
-    Returns:
-    - tickers: list
-        A list of tickers code for the top firms of the corresponding country.
-    - risk_free_rate: string
-        The ticker code for the risk-free bond corresponding to the same country.
-    """
-    if domain=="South Korea":
-        tickers = [
-            "005930.KS",  # Samsung Electronics
-            "035420.KS",  # Naver
-            "051910.KS",  # LG Chem
-            "005380.KS",  # Hyundai Motors
-            "006400.KS",  # Samsung SDI
-            "035720.KS",  # Kakao
-            "105560.KS",  # KB Financial
-            "051900.KS",  # LG Household & Healthcare
-            "017670.KS",  # SK Telecom
-            "096770.KS"   # SK Innovation
-        ]           
-        risk_free_rate = "365780.KS"
-    
-    return { "tickers": tickers, "risk free rate": risk_free_rate }

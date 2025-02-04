@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from data import load_data_from_file, calculate_returns, fetch_risk_free_rate, validate_data
+from data import fetch_data_from_api, calculate_returns, fetch_risk_free_rate, validate_data
 """
 This file contains function to apply the Black Litterman Model, used to slightly modify the weights computed using a Markowitz Model 
 according to the investor views regarding how the assets will perform.
@@ -40,11 +40,11 @@ def compute_risk_aversion(market_ticker, start_date, end_date, period="1d", risk
         The risk aversion of the investor.
     """
     try:
-        historic_data = load_data_from_file(market_ticker, start_date, end_date, period=period)
+        historic_data = fetch_data_from_api(market_ticker, start_date, end_date, interval=period)
         if validate_data(historic_data):
             returns = calculate_returns(historic_data)
-            expected_return = np.mean(returns, axis=0)
-            variance = returns.var()
+            expected_return = np.mean(returns, axis=0).item()
+            variance = returns.var().item()
             risk_free_rate = fetch_risk_free_rate(risk_free_rate)
     except Exception as e:
         raise ValueError(f"An error occured while fetching the data: {e}")
@@ -119,7 +119,7 @@ def black_litterman(tickers, risk_free_rate, cov_matrix, p, q, omega, market_tic
     Parameters:
     - tickers: list
         The list of the tickers code of every asset we want returns from.
-    - risk_free_rate: float
+    - risk_free_rate: str
         The risk free rate of the market.
     - cov_matrix: np.array 
         The covariance matrix of the assets.
