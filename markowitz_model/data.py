@@ -224,3 +224,6 @@ def save_data(data, file_path="data.csv"):
         data.to_csv(file_path)
     except Exception as e:
         raise ValueError("Failed to save the data: {e}")
+    
+def get_tickers_list(rff):
+    return 0

@@ -19,6 +19,25 @@ Functions:
     Use both of the previous functions to make the modification of the returns easier
 """
 
+def get_blacklitterman_views(views, assets_list, default_confidence=0.025):
+    num_assets = len(assets_list)
+    num_views = len(views)
+    p = np.zeros((num_views, num_assets))
+    q = np.zeros(num_views)
+    
+    for i, (view, expected_return) in enumerate(views.items()):
+        asset1, asset2 = view.split(" > ")
+        asset1_indx = assets_list.index(asset1)
+        asset2_indx = assets_list.index(asset2)
+        p[i, asset1_indx] = 1
+        p[i, asset2_indx] = -1
+        q[i] = expected_return
+
+    omega = np.eye(num_views) * default_confidence
+
+    return p, q, omega
+    
+
 def compute_risk_aversion(market_ticker, start_date, end_date, period="1d", risk_free_rate="^IRX"):
     """
     Compute the risk aversion of the investor using the CAPM formula.

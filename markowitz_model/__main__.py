@@ -18,7 +18,7 @@ Functions:
     Computes the maximum sharpe ratio portfolio for a given set of data.
 """
 
-def efficient_frontier(data, precision=50, show_graph=True, short_selling_allowed=False, risk_free_rate=None, calculate_max_sharpe_ratio=True):
+def efficient_frontier(data, precision=50, show_graph=True, short_selling_allowed=False, risk_free_rate=0.01, calculate_max_sharpe_ratio=True):
     """
     Calculates the efficient frontier using a given DataFrame.
     This function can also calculates the maximum sharpe ratio, plot the efficient frontier and show the Capital Market Line.
@@ -106,8 +106,7 @@ def get_risk_free_rate(rff="USA", interval="1d"):
     - risk_free_rate: float
         The average of the risk-free bond returns.
     """
-    bond = get_tickers_list(rff)['risk free rate']
-    risk_free_rate = fetch_risk_free_rate(bond, interval)
+    risk_free_rate = fetch_risk_free_rate(rff, interval)
     return risk_free_rate
 
 def min_variance_portfolio(data, short_selling_allowed=False, blacklitterman=False, tickers=None, market_ticker=None, p=None, q=None, omega=None, start_date="2022-01-01", end_date="2023-12-01", period="1d", risk_free_rate="^IRX"):
@@ -206,3 +205,7 @@ def max_sharpe_portfolio(data, risk_free_rate, short_selling_allowed=False, blac
     sharpe_ratio, opt_return, weights, std = max_sharpe_ratio(cov_matrix, returns, risk_free_rate=risk_free_rate, short_selling=short_selling_allowed)
     return { "Weights": weights, "StD": std, "Return": opt_return, "Sharpe Ratio": sharpe_ratio }
 
+
+data = load_data_from_file("test_dataset.csv")
+
+print(efficient_frontier(data)['frontier weights'])
